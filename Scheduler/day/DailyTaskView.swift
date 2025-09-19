@@ -36,7 +36,7 @@ struct DailyTaskView: View {
     
     var body: some View {
         VStack(spacing: 0) {
-            Text("\(username)的\(currentWeekday)任务")
+            Text("\(username)的\(currentWeekday)任务 V1.5.1")
                 .font(.system(size: 24, weight: .bold))
                 .padding(.top, 20)
                 .frame(maxWidth: .infinity, alignment: .leading)
@@ -123,24 +123,55 @@ struct DailyTaskView: View {
         .onAppear {
             refreshData()
         }
+        // 当远程任务更新时，刷新 UI 并打印日志
+        .onChange(of: storage.remoteUserTasks) { _ in
+            print("[UI] 检测到远程数据更新，刷新今日任务")
+            refreshData()
+        }
     }
     
     private func refreshData() {
         let today = Calendar.current.startOfDay(for: Date())
-        // 如果日期未变化且已有数据，则不更新
+        // 计算新的任务列表，并做清洗与去重，避免非法数据
+        let mappedNameInfo = TaskStorageManager.shared.userName
+        let rawItems = storage.tasks(for: today, userName: mappedNameInfo)
+        print("[UI] 使用用户名=\(mappedNameInfo) 获取任务，raw=\(rawItems.count)")
+        let cleanedItems: [String] = {
+            var seen = Set<String>()
+            var result: [String] = []
+            for t in rawItems {
+                let v = t.trimmingCharacters(in: .whitespacesAndNewlines)
+                if !v.isEmpty && !seen.contains(v) {
+                    seen.insert(v)
+                    result.append(v)
+                }
+            }
+            return result
+        }()
+
+        // 如果同一天且已有数据，并且任务集合未变化，则不重复刷新（但允许在远程变更时更新）
         if let lastDate = lastRefreshDate,
            Calendar.current.isDate(today, inSameDayAs: lastDate),
            !cardStates.isEmpty {
-            return
+            let oldSet = Set(items)
+            let newSet = Set(cleanedItems)
+            if oldSet == newSet {
+                print("[UI] 跳过刷新：同日任务未变化 (")
+                return
+            }
+        }
+
+        print("[UI] 刷新今日任务，数量: \(cleanedItems.count) -> \(cleanedItems)")
+        items = cleanedItems
+        
+        // 重置任务状态：以新任务为基准，尽量保留已有状态
+        var states: [String: Bool] = [:]
+        for task in items {
+            // 优先保留当前 UI 状态；若无则默认 false
+            states[task] = cardStates[task] ?? false
         }
         
-        // 更新任务列表
-        items = WeeklyTasksConfig.tasks(for: today, userName: TaskStorageManager.shared.userName)
-        
-        // 重置任务状态
-        var states = Dictionary(uniqueKeysWithValues: items.map { ($0, false) })
-        
-        // 从存储加载数据
+        // 从存储加载数据（以存储记录为更高优先级）
         if let record = TaskStorageManager.shared.getRecord(for: today) {
             for (task, completed) in record.tasks {
                 if states.keys.contains(task) {

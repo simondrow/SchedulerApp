@@ -57,6 +57,10 @@ struct WeeklyTaskView: View {
         .onAppear {
             refreshWeeklyData()
         }
+        .onChange(of: storage.remoteUserTasks) { _ in
+            print("[UI] 远程数据更新，刷新周视图")
+            refreshWeeklyData()
+        }
     }
     
     private func refreshWeeklyData() {
@@ -122,7 +126,8 @@ struct DayTaskSection: View {
             // 任务列表
             LazyVGrid(columns: [GridItem(.adaptive(minimum: 120))], spacing: 10) {
                 let name = storage.userName
-                ForEach(WeeklyTasksConfig.tasks(for: date, userName: TaskStorageManager.shared.userName),
+                let tasks = storage.tasks(for: date, userName: TaskStorageManager.shared.userName)
+                ForEach(tasks,
                         id: \.self)
                 { task in
                     TaskStatusBadge(task: task, date: date)

@@ -29,6 +29,10 @@ struct MainTabView: View {
                 }
             }
             .background(Color(.systemGroupedBackground))
+            .refreshable {
+                let ok = await storage.loadRemoteTasksAsync()
+                print("[UI] 下拉刷新触发，远程加载结果: \(ok)")
+            }
         }
     }
 }

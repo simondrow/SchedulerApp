@@ -21,9 +21,15 @@ struct SchedulerApp: App {
             if storage.hasUserName() {
                 MainTabView(username: storage.userName)
                     .environmentObject(storage)
+                    .task {
+                        storage.loadRemoteTasks()
+                    }
             } else {
                 NameInputView()
                     .environmentObject(storage)
+                    .task {
+                        storage.loadRemoteTasks()
+                    }
             }
         }
     }
