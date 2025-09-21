@@ -36,7 +36,7 @@ struct DailyTaskView: View {
     
     var body: some View {
         VStack(spacing: 0) {
-            Text("\(username)的\(currentWeekday)任务 V1.5.1")
+            Text("\(username)的\(currentWeekday)任务 V1.5.3")
                 .font(.system(size: 24, weight: .bold))
                 .padding(.top, 20)
                 .frame(maxWidth: .infinity, alignment: .leading)

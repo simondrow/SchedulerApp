@@ -18,7 +18,7 @@ struct NameInputView: View {
         NavigationStack {
             VStack(spacing: 30) {
                 // 标题
-                Text("欢迎使用任务管理器 V1.5.1")
+                Text("欢迎使用任务管理器 V1.5.3")
                     .font(.largeTitle.bold())
                     .multilineTextAlignment(.center)
                 
